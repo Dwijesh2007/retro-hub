@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chess Game</title>
+	<style>
+		:root {
+			--primary-color: #0020d4;
+			--secondary-color: #00f5ff;
+			--background-color: #000000;
+			--text-color: #ffffff;
+		}
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: 'Press Start 2P', cursive;
+		}
+		body {
+			background-color: var(--background-color);
+			color: var(--text-color);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 2rem;
+		}
+		.header {
+			text-align: center;
+			margin-bottom: 2rem;
+			text-shadow: 0 0 10px var(--secondary-color);
+		}
+		.header h1 {
+			font-size: 2.5rem;
+			color: var(--secondary-color);
+			margin-bottom: 0.5rem;
+		}
+		.header p {
+			color: var(--text-color);
+			font-size: 1rem;
+		}
+		.chessboard {
+			display: grid;
+			grid-template-columns: repeat(8, 50px);
+			grid-template-rows: repeat(8, 50px);
+			border: 4px solid var(--primary-color);
+			box-shadow: 0 0 20px var(--secondary-color);
+			margin-top: 10px;
+			background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+			border-radius: 10px;
+		}
+		.square {
+			width: 50px;
+			height: 50px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 32px;
+			cursor: pointer;
+			transition: background 0.2s, color 0.2s;
+		}
+		.white {
+			background: #fff;
+			color: #0020d4;
+		}
+		.black {
+			background: #222;
+			color: #00f5ff;
+		}
+		.selected {
+			outline: 3px solid #ff0;
+		}
+		.move-path {
+			box-shadow: 0 0 10px 3px var(--secondary-color);
+			background: rgba(0,245,255,0.25);
+		}
+		.top-link {
+			margin-bottom: 20px;
+			color: var(--secondary-color);
+			text-decoration: none;
+			font-size: 1rem;
+			border: 2px solid var(--secondary-color);
+			border-radius: 5px;
+			padding: 0.5rem 1rem;
+			background: var(--background-color);
+			transition: background 0.3s, color 0.3s;
+		}
+		.top-link:hover {
+			background: var(--secondary-color);
+			color: var(--background-color);
+		}
+		@keyframes glow {
+			0% { text-shadow: 0 0 10px var(--secondary-color); }
+			50% { text-shadow: 0 0 20px var(--secondary-color), 0 0 30px var(--primary-color); }
+			100% { text-shadow: 0 0 10px var(--secondary-color); }
+		}
+		.glow-text {
+			animation: glow 2s infinite;
+		}
+	</style>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+	<a class="top-link" href="1.html">Back to Home</a>
+	<div class="header">
+		<h1 class="glow-text">CHESS GAME</h1>
+		<p>Play classic black & white chess</p>
+	</div>
+	<div id="chessboard" class="chessboard"></div>
+	<script>
+		// Unicode chess pieces
+		const PIECES = {
+			'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+			'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+		};
+		// Initial board setup
+		let board = [
+			['r','n','b','q','k','b','n','r'],
+			['p','p','p','p','p','p','p','p'],
+			['','','','','','','',''],
+			['','','','','','','',''],
+			['','','','','','','',''],
+			['','','','','','','',''],
+			['P','P','P','P','P','P','P','P'],
+			['R','N','B','Q','K','B','N','R']
+		];
+		let selected = null;
+		let turn = 'white'; // 'white' or 'black'
+
+		function getPossibleMoves(row, col, piece) {
+			let moves = [];
+			const isWhite = piece === piece.toUpperCase();
+			const directions = {
+				'N': [-1, 0], 'S': [1, 0], 'E': [0, 1], 'W': [0, -1],
+				'NE': [-1, 1], 'NW': [-1, -1], 'SE': [1, 1], 'SW': [1, -1]
+			};
+			function isEmpty(r, c) {
+				return r >= 0 && r < 8 && c >= 0 && c < 8 && !board[r][c];
+			}
+			function isEnemy(r, c) {
+				if (r < 0 || r > 7 || c < 0 || c > 7) return false;
+				const target = board[r][c];
+				if (!target) return false;
+				return (isWhite && target === target.toLowerCase()) || (!isWhite && target === target.toUpperCase());
+			}
+			function isOwn(r, c) {
+				if (r < 0 || r > 7 || c < 0 || c > 7) return false;
+				const target = board[r][c];
+				if (!target) return false;
+				return (isWhite && target === target.toUpperCase()) || (!isWhite && target === target.toLowerCase());
+			}
+			switch (piece.toUpperCase()) {
+				case 'P': {
+					let dir = isWhite ? -1 : 1;
+					// Forward move
+					if (isEmpty(row + dir, col)) {
+						moves.push([row + dir, col]);
+						// Double move from starting position
+						if ((isWhite && row === 6) || (!isWhite && row === 1)) {
+							if (isEmpty(row + dir * 2, col)) moves.push([row + dir * 2, col]);
+						}
+					}
+					// Captures
+					for (let dc of [-1, 1]) {
+						if (isEnemy(row + dir, col + dc)) moves.push([row + dir, col + dc]);
+					}
+					break;
+				}
+				case 'R': {
+					for (let d of ['N','S','E','W']) {
+						let [dr, dc] = directions[d];
+						for (let i = 1; i < 8; i++) {
+							let r = row + dr * i, c = col + dc * i;
+							if (r < 0 || r > 7 || c < 0 || c > 7) break;
+							if (isOwn(r, c)) break;
+							if (isEnemy(r, c)) { moves.push([r, c]); break; }
+							moves.push([r, c]);
+						}
+					}
+					break;
+				}
+				case 'N': {
+					for (let [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+						let r = row + dr, c = col + dc;
+						if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+						if (isOwn(r, c)) continue;
+						moves.push([r, c]);
+					}
+					break;
+				}
+				case 'B': {
+					for (let d of ['NE','NW','SE','SW']) {
+						let [dr, dc] = directions[d];
+						for (let i = 1; i < 8; i++) {
+							let r = row + dr * i, c = col + dc * i;
+							if (r < 0 || r > 7 || c < 0 || c > 7) break;
+							if (isOwn(r, c)) break;
+							if (isEnemy(r, c)) { moves.push([r, c]); break; }
+							moves.push([r, c]);
+						}
+					}
+					break;
+				}
+				case 'Q': {
+					for (let d of Object.keys(directions)) {
+						let [dr, dc] = directions[d];
+						for (let i = 1; i < 8; i++) {
+							let r = row + dr * i, c = col + dc * i;
+							if (r < 0 || r > 7 || c < 0 || c > 7) break;
+							if (isOwn(r, c)) break;
+							if (isEnemy(r, c)) { moves.push([r, c]); break; }
+							moves.push([r, c]);
+						}
+					}
+					break;
+				}
+				case 'K': {
+					for (let d of Object.keys(directions)) {
+						let [dr, dc] = directions[d];
+						let r = row + dr, c = col + dc;
+						if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+						if (isOwn(r, c)) continue;
+						moves.push([r, c]);
+					}
+					break;
+				}
+			}
+			return moves;
+		}
+
+		function renderBoard() {
+			const chessboard = document.getElementById('chessboard');
+			chessboard.innerHTML = '';
+			let moveSquares = [];
+			if (selected) {
+				const selPiece = board[selected.row][selected.col];
+				moveSquares = getPossibleMoves(selected.row, selected.col, selPiece);
+			}
+			for (let row = 0; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					const square = document.createElement('div');
+					square.className = 'square ' + ((row + col) % 2 === 0 ? 'white' : 'black');
+					square.dataset.row = row;
+					square.dataset.col = col;
+					if (selected && selected.row === row && selected.col === col) {
+						square.classList.add('selected');
+					}
+					if (moveSquares.some(([r, c]) => r === row && c === col)) {
+						square.classList.add('move-path');
+					}
+					const piece = board[row][col];
+					if (piece) square.textContent = PIECES[piece];
+					square.onclick = () => handleSquareClick(row, col);
+					chessboard.appendChild(square);
+				}
+			}
+		}
+
+		function handleSquareClick(row, col) {
+			const piece = board[row][col];
+			if (selected) {
+				const selPiece = board[selected.row][selected.col];
+				// Only allow move if clicked square is in possible moves
+				const possibleMoves = getPossibleMoves(selected.row, selected.col, selPiece);
+				const isLegal = possibleMoves.some(([r, c]) => r === row && c === col);
+				if (isLegal) {
+					board[row][col] = selPiece;
+					board[selected.row][selected.col] = '';
+					turn = turn === 'white' ? 'black' : 'white';
+				}
+				selected = null;
+			} else {
+				// Select only current player's piece
+				if (piece && ((turn === 'white' && piece === piece.toUpperCase()) || (turn === 'black' && piece === piece.toLowerCase()))) {
+					selected = { row, col };
+				}
+			}
+			renderBoard();
+		}
+
+		renderBoard();
+	</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Login - Retro Gaming Hub</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			min-height: 100vh;
+			background: #000428;
+			overflow: hidden;
+			position: relative;
+			font-family: 'Press Start 2P', cursive;
+		}
+		.particles {
+			position: fixed;
+			top: 0; left: 0; width: 100vw; height: 100vh;
+			z-index: 0;
+		}
+		.login-container {
+			position: relative;
+			z-index: 1;
+			min-width: 320px;
+			max-width: 400px;
+			margin: 80px auto;
+			padding: 2rem 2.5rem;
+			border-radius: 20px;
+			background: rgba(0, 20, 60, 0.25);
+			box-shadow: 0 8px 32px 0 rgba(0, 245, 255, 0.37);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(0, 245, 255, 0.18);
+			color: #fff;
+			text-align: center;
+		}
+		.login-container h2 {
+			color: #00f5ff;
+			margin-bottom: 1.5rem;
+			font-size: 2rem;
+			text-shadow: 0 0 10px #00f5ff;
+		}
+		.login-container input {
+			width: 90%;
+			padding: 0.7rem;
+			margin: 0.7rem 0;
+			border-radius: 8px;
+			border: none;
+			background: rgba(255,255,255,0.1);
+			color: #00f5ff;
+			font-size: 1rem;
+			outline: none;
+		}
+		.login-container button {
+			width: 100%;
+			padding: 0.7rem;
+			border-radius: 8px;
+			border: none;
+			background: linear-gradient(90deg, #0020d4, #00f5ff);
+			color: #fff;
+			font-size: 1.1rem;
+			cursor: pointer;
+			margin-top: 1rem;
+			box-shadow: 0 0 10px #00f5ff;
+			transition: background 0.3s;
+		}
+		.login-container button:hover {
+			background: linear-gradient(90deg, #00f5ff, #0020d4);
+		}
+		.toggle-link {
+			color: #00f5ff;
+			text-decoration: underline;
+			cursor: pointer;
+			margin-top: 1rem;
+			display: block;
+		}
+		.error {
+			color: #ff4d4d;
+			margin-top: 0.5rem;
+		}
+	</style>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+	<canvas class="particles"></canvas>
+	<div class="login-container" id="loginBlock">
+		<h2 id="formTitle">Login</h2>
+		<form id="loginForm">
+			<input type="text" id="username" placeholder="Username" required><br>
+			<input type="password" id="password" placeholder="Password" required><br>
+			<button type="submit">Login</button>
+			<span class="toggle-link" id="toSignup">New user? Sign up</span>
+			<div class="error" id="loginError"></div>
+		</form>
+		<form id="signupForm" style="display:none;">
+			<input type="text" id="newUsername" placeholder="Username" required><br>
+			<input type="password" id="newPassword" placeholder="Password" required><br>
+			<button type="submit">Sign Up</button>
+			<span class="toggle-link" id="toLogin">Already have an account? Login</span>
+			<div class="error" id="signupError"></div>
+		</form>
+	</div>
+	<script>
+		// Particle background
+		const canvas = document.querySelector('.particles');
+		const ctx = canvas.getContext('2d');
+		let w = window.innerWidth, h = window.innerHeight;
+		canvas.width = w; canvas.height = h;
+		let particles = Array.from({length: 60}, () => ({
+			x: Math.random() * w,
+			y: Math.random() * h,
+			r: Math.random() * 3 + 2,
+			dx: (Math.random() - 0.5) * 1.2,
+			dy: (Math.random() - 0.5) * 1.2
+		}));
+		function drawParticles() {
+			ctx.clearRect(0,0,w,h);
+			for (let p of particles) {
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+				ctx.fillStyle = 'rgba(0,245,255,0.7)';
+				ctx.shadowColor = '#00f5ff';
+				ctx.shadowBlur = 10;
+				ctx.fill();
+				ctx.closePath();
+				p.x += p.dx; p.y += p.dy;
+				if (p.x < 0 || p.x > w) p.dx *= -1;
+				if (p.y < 0 || p.y > h) p.dy *= -1;
+			}
+			requestAnimationFrame(drawParticles);
+		}
+		drawParticles();
+		window.addEventListener('resize', () => {
+			w = window.innerWidth; h = window.innerHeight;
+			canvas.width = w; canvas.height = h;
+		});
+
+		// Form toggle
+		document.getElementById('toSignup').onclick = function() {
+			document.getElementById('loginForm').style.display = 'none';
+			document.getElementById('signupForm').style.display = 'block';
+			document.getElementById('formTitle').textContent = 'Sign Up';
+		};
+		document.getElementById('toLogin').onclick = function() {
+			document.getElementById('loginForm').style.display = 'block';
+			document.getElementById('signupForm').style.display = 'none';
+			document.getElementById('formTitle').textContent = 'Login';
+		};
+
+		// Login/Signup logic
+		document.getElementById('signupForm').onsubmit = async function(e) {
+			e.preventDefault();
+			const username = document.getElementById('newUsername').value.trim();
+			const password = document.getElementById('newPassword').value;
+			if (!username || !password) {
+				document.getElementById('signupError').textContent = 'Please fill all fields.';
+				return;
+			}
+			if (!/^\d{6}$/.test(password)) {
+				document.getElementById('signupError').textContent = 'Password must be 6 digits (numbers only).';
+				return;
+			}
+			try {
+				const res = await fetch('/api/signup', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({username, password})
+				});
+				if (res.ok) {
+					document.getElementById('signupError').textContent = 'Signup successful! You can now login.';
+					setTimeout(() => {
+						document.getElementById('toLogin').click();
+					}, 1200);
+				} else {
+					const data = await res.json();
+					document.getElementById('signupError').textContent = data.error || 'Signup failed.';
+				}
+			} catch {
+				document.getElementById('signupError').textContent = 'Signup failed.';
+			}
+		};
+		document.getElementById('loginForm').onsubmit = async function(e) {
+			e.preventDefault();
+			const username = document.getElementById('username').value.trim();
+			const password = document.getElementById('password').value;
+			try {
+				const res = await fetch('/api/login', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({username, password})
+				});
+				if (res.ok) {
+					document.getElementById('loginError').textContent = '';
+					window.location.href = '1.html';
+				} else {
+					const data = await res.json();
+					document.getElementById('loginError').textContent = data.error || 'Login failed.';
+				}
+			} catch {
+				document.getElementById('loginError').textContent = 'Login failed.';
+			}
+		};
+	</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Checkers Game</title>
+	<style>
+		:root {
+			--primary-color: #0020d4;
+			--secondary-color: #00f5ff;
+			--background-color: #000000;
+			--text-color: #ffffff;
+		}
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: 'Press Start 2P', cursive;
+		}
+		body {
+			background-color: var(--background-color);
+			color: var(--text-color);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 2rem;
+		}
+		.header {
+			text-align: center;
+			margin-bottom: 2rem;
+			text-shadow: 0 0 10px var(--secondary-color);
+		}
+		.header h1 {
+			font-size: 2.5rem;
+			color: var(--secondary-color);
+			margin-bottom: 0.5rem;
+		}
+		.header p {
+			color: var(--text-color);
+			font-size: 1rem;
+		}
+		.board {
+			display: grid;
+			grid-template-columns: repeat(8, 50px);
+			grid-template-rows: repeat(8, 50px);
+			border: 4px solid var(--primary-color);
+			box-shadow: 0 0 20px var(--secondary-color);
+			margin-top: 10px;
+			background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+			border-radius: 10px;
+		}
+		.square {
+			width: 50px;
+			height: 50px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 32px;
+			cursor: pointer;
+			transition: background 0.2s, color 0.2s;
+		}
+		.white {
+			background: #fff;
+			color: #0020d4;
+		}
+		.black {
+			background: #222;
+			color: #00f5ff;
+		}
+		.selected {
+			outline: 3px solid #ff0;
+		}
+		.move-path {
+			box-shadow: 0 0 10px 3px var(--secondary-color);
+			background: rgba(0,245,255,0.25);
+		}
+		.top-link {
+			margin-bottom: 20px;
+			color: var(--secondary-color);
+			text-decoration: none;
+			font-size: 1rem;
+			border: 2px solid var(--secondary-color);
+			border-radius: 5px;
+			padding: 0.5rem 1rem;
+			background: var(--background-color);
+			transition: background 0.3s, color 0.3s;
+		}
+		.top-link:hover {
+			background: var(--secondary-color);
+			color: var(--background-color);
+		}
+		.coin {
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 28px;
+			box-shadow: 0 0 8px var(--primary-color);
+		}
+		.red {
+			background: #d40000;
+			color: #fff;
+		}
+		.blue {
+			background: #00f5ff;
+			color: #0020d4;
+		}
+		.king {
+			border: 2px solid gold;
+			font-weight: bold;
+		}
+		@keyframes glow {
+			0% { text-shadow: 0 0 10px var(--secondary-color); }
+			50% { text-shadow: 0 0 20px var(--secondary-color), 0 0 30px var(--primary-color); }
+			100% { text-shadow: 0 0 10px var(--secondary-color); }
+		}
+		.glow-text {
+			animation: glow 2s infinite;
+		}
+	</style>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+	<a class="top-link" href="1.html">Back to Home</a>
+	<div class="header">
+		<h1 class="glow-text">CHECKERS GAME</h1>
+		<p>Play classic checkers</p>
+	</div>
+	<div id="board" class="board"></div>
+	<script>
+		// Board setup: r = red, b = blue, R = red king, B = blue king
+		let board = Array(8).fill().map(() => Array(8).fill(''));
+		for (let row = 0; row < 3; row++) {
+			for (let col = 0; col < 8; col++) {
+				if ((row + col) % 2 === 1) board[row][col] = 'b';
+			}
+		}
+		for (let row = 5; row < 8; row++) {
+			for (let col = 0; col < 8; col++) {
+				if ((row + col) % 2 === 1) board[row][col] = 'r';
+			}
+		}
+		let selected = null;
+		let turn = 'red'; // 'red' or 'blue'
+
+		function getPossibleMoves(row, col, piece) {
+			let moves = [];
+			let jumps = [];
+			const isRed = piece === 'r' || piece === 'R';
+			const isKing = piece === 'R' || piece === 'B';
+			const directions = isKing ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (isRed ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+			// Normal moves
+			for (let [dr, dc] of directions) {
+				let r = row + dr, c = col + dc;
+				if (r >= 0 && r < 8 && c >= 0 && c < 8 && !board[r][c]) {
+					moves.push([r, c]);
+				}
+			}
+			// Jumps
+			for (let [dr, dc] of directions) {
+				let r1 = row + dr, c1 = col + dc;
+				let r2 = row + dr * 2, c2 = col + dc * 2;
+				if (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 && !board[r2][c2]) {
+					let target = board[r1][c1];
+					if (target && ((isRed && (target === 'b' || target === 'B')) || (!isRed && (target === 'r' || target === 'R')))) {
+						jumps.push([r2, c2, r1, c1]);
+					}
+				}
+			}
+			return { moves, jumps };
+		}
+
+		function renderBoard() {
+			const boardDiv = document.getElementById('board');
+			boardDiv.innerHTML = '';
+			let moveSquares = [], jumpSquares = [];
+			if (selected) {
+				const selPiece = board[selected.row][selected.col];
+				const { moves, jumps } = getPossibleMoves(selected.row, selected.col, selPiece);
+				moveSquares = moves;
+				jumpSquares = jumps.map(j => [j[0], j[1]]);
+			}
+			for (let row = 0; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					const square = document.createElement('div');
+					square.className = 'square ' + ((row + col) % 2 === 0 ? 'white' : 'black');
+					square.dataset.row = row;
+					square.dataset.col = col;
+					if (selected && selected.row === row && selected.col === col) {
+						square.classList.add('selected');
+					}
+					if (moveSquares.some(([r, c]) => r === row && c === col) || jumpSquares.some(([r, c]) => r === row && c === col)) {
+						square.classList.add('move-path');
+					}
+					const piece = board[row][col];
+					if (piece) {
+						const coin = document.createElement('div');
+						coin.className = 'coin ' + (piece.toLowerCase() === 'r' ? 'red' : 'blue') + (piece === 'R' || piece === 'B' ? ' king' : '');
+						coin.textContent = (piece === 'R' || piece === 'B') ? 'K' : '';
+						square.appendChild(coin);
+					}
+					square.onclick = () => handleSquareClick(row, col);
+					boardDiv.appendChild(square);
+				}
+			}
+		}
+
+		function handleSquareClick(row, col) {
+			const piece = board[row][col];
+			if (selected) {
+				const selPiece = board[selected.row][selected.col];
+				const { moves, jumps } = getPossibleMoves(selected.row, selected.col, selPiece);
+				// Check if move is a jump
+				const jump = jumps.find(([r, c]) => r === row && c === col);
+				if (jump) {
+					board[row][col] = selPiece;
+					board[selected.row][selected.col] = '';
+					board[jump[2]][jump[3]] = '';
+					// King me
+					if (selPiece === 'r' && row === 0) board[row][col] = 'R';
+					if (selPiece === 'b' && row === 7) board[row][col] = 'B';
+					turn = turn === 'red' ? 'blue' : 'red';
+					selected = null;
+				} else if (moves.some(([r, c]) => r === row && c === col)) {
+					board[row][col] = selPiece;
+					board[selected.row][selected.col] = '';
+					// King me
+					if (selPiece === 'r' && row === 0) board[row][col] = 'R';
+					if (selPiece === 'b' && row === 7) board[row][col] = 'B';
+					turn = turn === 'red' ? 'blue' : 'red';
+					selected = null;
+				} else {
+					selected = null;
+				}
+			} else {
+				if (piece && ((turn === 'red' && (piece === 'r' || piece === 'R')) || (turn === 'blue' && (piece === 'b' || piece === 'B')))) {
+					selected = { row, col };
+				}
+			}
+			renderBoard();
+		}
+
+		renderBoard();
+	</script>
+</body>
+</html>
