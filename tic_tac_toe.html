@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic-Tac-Toe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Press Start 2P', cursive; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        h1 { color: #00f5ff; text-shadow: 0 0 10px #0020d4; }
+        .board { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; margin: 2rem 0; }
+        .cell { width: 80px; height: 80px; background: linear-gradient(45deg, #0020d4, #00f5ff); color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; box-shadow: 0 0 10px #0020d4; }
+        .cell:hover { background: #00f5ff; color: #000; }
+        .reset { background: #000; color: #fff; border: 2px solid #00f5ff; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .reset:hover { background: #00f5ff; color: #000; }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="board" id="board"></div>
+    <button class="reset" onclick="resetGame()">Reset</button>
+    <button class="reset" onclick="goBack()">Back to Main Menu</button>
+    <script>
+        let board = Array(9).fill('');
+        let current = 'X';
+        function render() {
+            document.getElementById('board').innerHTML = board.map((v,i) => `<div class='cell' onclick='move(${i})'>${v}</div>`).join('');
+        }
+        function move(i) {
+            if(board[i]) return;
+            board[i] = current;
+            if(checkWin()) { alert(current + ' wins!'); resetGame(); return; }
+            if(board.every(c => c)) { alert('Draw!'); resetGame(); return; }
+            current = current === 'X' ? 'O' : 'X';
+            render();
+        }
+        function checkWin() {
+            const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return w.some(l => l.every(i => board[i] === current));
+        }
+        function resetGame() { board = Array(9).fill(''); current = 'X'; render(); }
+        render();
+    function goBack() { window.location.href = '1.html'; }
+    </script>
+</body>
+</html>

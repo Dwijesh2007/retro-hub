@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minesweeper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Press Start 2P', cursive; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        h1 { color: #00f5ff; text-shadow: 0 0 10px #0020d4; }
+        .board { display: grid; grid-template-columns: repeat(8, 40px); gap: 5px; margin: 2rem 0; }
+        .cell { width: 40px; height: 40px; background: linear-gradient(45deg, #0020d4, #00f5ff); color: #fff; font-size: 1rem; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; box-shadow: 0 0 5px #0020d4; }
+        .cell.revealed { background: #00f5ff; color: #000; }
+        .cell.mine { background: #d40000; color: #fff; }
+        .reset { background: #000; color: #fff; border: 2px solid #00f5ff; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .reset:hover { background: #00f5ff; color: #000; }
+    </style>
+</head>
+<body>
+    <h1>Minesweeper</h1>
+    <div class="board" id="board"></div>
+    <button class="reset" onclick="resetGame()">Reset</button>
+    <button class="reset" onclick="goBack()">Back to Main Menu</button>
+    <script>
+        const size = 8, mines = 10;
+        let board, revealed, mineSet;
+        function init() {
+            board = Array(size*size).fill(0);
+            revealed = Array(size*size).fill(false);
+            mineSet = new Set();
+            while(mineSet.size<mines) mineSet.add(Math.floor(Math.random()*size*size));
+            mineSet.forEach(i=>board[i]=-1);
+            for(let i=0;i<size*size;i++) if(board[i]!==-1) board[i]=countMines(i);
+        }
+        function countMines(i) {
+            let c=0,x=i%size,y=Math.floor(i/size);
+            for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) {
+                let nx=x+dx,ny=y+dy,ni=ny*size+nx;
+                if(nx>=0&&nx<size&&ny>=0&&ny<size&&board[ni]===-1) c++;
+            }
+            return c;
+        }
+        function render() {
+            document.getElementById('board').innerHTML = board.map((v,i) => `<div class='cell${revealed[i]?' revealed':''}${revealed[i]&&v===-1?' mine':''}' onclick='reveal(${i})'>${revealed[i]?(v===-1?'💣':(v||'')):''}</div>`).join('');
+        }
+        function reveal(i) {
+            if(revealed[i]) return;
+            revealed[i]=true;
+            if(board[i]===-1) { alert('Game Over!'); resetGame(); return; }
+            if(board[i]===0) flood(i);
+            render();
+            if(revealed.filter(Boolean).length===size*size-mines) { alert('You win!'); resetGame(); }
+        }
+        function flood(i) {
+            let x=i%size,y=Math.floor(i/size);
+            for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) {
+                let nx=x+dx,ny=y+dy,ni=ny*size+nx;
+                if(nx>=0&&nx<size&&ny>=0&&ny<size&&!revealed[ni]&&board[ni]!==-1) {
+                    revealed[ni]=true;
+                    if(board[ni]===0) flood(ni);
+                }
+            }
+        }
+        function resetGame() { init(); render(); }
+        init(); render();
+    function goBack() { window.location.href = '1.html'; }
+    </script>
+</body>
+</html>

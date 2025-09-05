@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>2048</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Press Start 2P', cursive; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        h1 { color: #00f5ff; text-shadow: 0 0 10px #0020d4; }
+        .board { display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; margin: 2rem 0; }
+        .cell { width: 80px; height: 80px; background: linear-gradient(45deg, #0020d4, #00f5ff); color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 10px; box-shadow: 0 0 10px #0020d4; }
+        .cell[data-v] { background: #ffd400; color: #000; }
+        .score { color: #00f5ff; font-size: 1.2rem; margin-bottom: 1rem; }
+        .reset { background: #000; color: #fff; border: 2px solid #00f5ff; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .reset:hover { background: #00f5ff; color: #000; }
+    </style>
+</head>
+<body>
+    <h1>2048</h1>
+    <div class="score" id="score">Score: 0</div>
+    <div class="board" id="board"></div>
+    <button class="reset" onclick="resetGame()">Reset</button>
+    <button class="reset" onclick="goBack()">Back to Main Menu</button>
+    <script>
+        let board, score;
+        function init() { board=Array(16).fill(0); score=0; add(); add(); render(); }
+        function add() { let e=[]; board.forEach((v,i)=>{if(!v)e.push(i);}); if(e.length) board[e[Math.floor(Math.random()*e.length)]]=2; }
+        function render() {
+            document.getElementById('board').innerHTML = board.map(v => `<div class='cell'${v?` data-v`:' '}>${v||''}</div>`).join('');
+            document.getElementById('score').textContent = 'Score: '+score;
+        }
+        document.addEventListener('keydown',e=>{let d={ArrowUp:0,ArrowDown:1,ArrowLeft:2,ArrowRight:3}[e.key];if(d!==undefined)move(d);});
+        function move(d) {
+            let moved=false;
+            for(let i=0;i<4;i++) {
+                let line=[];
+                for(let j=0;j<4;j++) {
+                    let idx=d<2?j*4+i:i*4+j;
+                    line.push(board[idx]);
+                }
+                if(d%2) line.reverse();
+                let merged=[];
+                for(let k=0;k<4;k++) {
+                    if(line[k]&&line[k]===line[k+1]) { line[k]*=2; score+=line[k]; line[k+1]=0; merged.push(k); }
+                }
+                line=line.filter(v=>v).concat(Array(4-line.filter(v=>v).length).fill(0));
+                if(d%2) line.reverse();
+                for(let j=0;j<4;j++) {
+                    let idx=d<2?j*4+i:i*4+j;
+                    if(board[idx]!==line[j]) moved=true;
+                    board[idx]=line[j];
+                }
+            }
+            if(moved) add(); render();
+            if(!board.some(v=>!v)&&!canMove()) { alert('Game Over!'); resetGame(); }
+        }
+        function canMove() {
+            for(let i=0;i<4;i++) for(let j=0;j<4;j++) {
+                let idx=i*4+j;
+                if(j<3&&board[idx]===board[idx+1]) return true;
+                if(i<3&&board[idx]===board[idx+4]) return true;
+            }
+            return false;
+        }
+        function resetGame() { init(); }
+        init();
+    function goBack() { window.location.href = '1.html'; }
+    </script>
+</body>
+</html>

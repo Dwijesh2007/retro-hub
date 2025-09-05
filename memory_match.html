@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Match</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Press Start 2P', cursive; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        h1 { color: #00f5ff; text-shadow: 0 0 10px #0020d4; }
+        .board { display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; margin: 2rem 0; }
+        .card { width: 80px; height: 80px; background: linear-gradient(45deg, #0020d4, #00f5ff); color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; box-shadow: 0 0 10px #0020d4; }
+        .card.flipped { background: #00f5ff; color: #000; }
+        .reset { background: #000; color: #fff; border: 2px solid #00f5ff; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .reset:hover { background: #00f5ff; color: #000; }
+    </style>
+</head>
+<body>
+    <h1>Memory Match</h1>
+    <div class="board" id="board"></div>
+    <button class="reset" onclick="resetGame()">Reset</button>
+    <button class="reset" onclick="goBack()">Back to Main Menu</button>
+    <script>
+        let values = ['A','B','C','D','E','F','G','H'];
+        let cards = [...values, ...values].sort(() => Math.random() - 0.5);
+        let flipped = [], matched = [];
+        function render() {
+            document.getElementById('board').innerHTML = cards.map((v,i) => `<div class='card${flipped.includes(i)||matched.includes(i)?' flipped':''}' onclick='flip(${i})'>${flipped.includes(i)||matched.includes(i)?v:''}</div>`).join('');
+        }
+        function flip(i) {
+            if(flipped.length===2||flipped.includes(i)||matched.includes(i)) return;
+            flipped.push(i);
+            render();
+            if(flipped.length===2) {
+                setTimeout(() => {
+                    if(cards[flipped[0]]===cards[flipped[1]]) matched.push(...flipped);
+                    flipped=[];
+                    render();
+                    if(matched.length===cards.length) alert('You win!');
+                }, 800);
+            }
+        }
+        function resetGame() { cards = [...values, ...values].sort(() => Math.random() - 0.5); flipped = []; matched = []; render(); }
+        render();
+    function goBack() { window.location.href = '1.html'; }
+    </script>
+</body>
+</html>
